@@ -12,37 +12,11 @@
 
 #include "ft_nm.h"
 
-// {
-// char			type;
-// 	char			*section_name;
-
-// 	type = 0;
-// 	if ((lt->type & N_TYPE) == N_INDR)
-// 		return 'I'
-// 	if ((lt->type & N_TYPE) == N_STAB)
-// 		return '-'
-// 	if ((lt->type & N_TYPE) == N_UNDF && (lt->type & N_EXT) && lt->value != 0)
-// 		return 'C'
-// 	if ((lt->type & N_TYPE) == N_UNDF && (lt->type & N_TYPE) == N_PBUD)
-// 		return 'u'
-// 	if ((lt->type & N_TYPE) == N_UNDF)
-// 		return 'U'
-// 	if ((lt->type & N_TYPE) == N_ABS)
-// 		return 'A'
-// 	if ((lt->type & N_TYPE) == N_SECT)
-// 	{
-// 		section_name = tab[lt->sect - 1];
-// 		if (section_name && (!ft_strcmp(section_name, "__text") || (!ft_strcmp(section_name, "__data") || (!ft_strcmp(section_name, "__bss"))
-// 			return ft_toupper(section_name[2]) : 'S';
-// 		else
-// 			return ('S');
-// 	}
-// }
-
-// SORT RESULT OF NM BY NAME
-
-char				ft_type(uint8_t type, uint64_t value) //, uint8_t sect)
+char				ft_type(uint8_t type, uint64_t value, uint8_t sect, char **sections)
 {
+	char			*section_name;
+
+	section_name = NULL;
 	if ((type & N_TYPE) == N_INDR)
 		return ('I');
 	if ((type & N_TYPE) == N_STAB)
@@ -57,36 +31,77 @@ char				ft_type(uint8_t type, uint64_t value) //, uint8_t sect)
 	}
 	if ((type & N_TYPE) == N_ABS)
 		return ('A');
-	// if ((type & N_TYPE) == N_SECT)
-	// {
-	// 	ft_printf("\nNSECT -> %zu\n", sect);
-	// 	return (' ');
-	// }
+	if ((type & N_TYPE) == N_SECT)
+	{
+		if (!sections || !sections[sect - 1])
+			return (0);
+		section_name = sections[sect - 1];
+		if (section_name && (!ft_strcmp(section_name, "__text") || !ft_strcmp(section_name, "__data") || !ft_strcmp(section_name, "__bss")))
+			return (ft_toupper(section_name[2]));
+		else
+			return ('S');
+	}
 	return (' ');
 }
 
-void				print_output(int nsyms, int symoff, int stroff, void *ptr)
+void				print_output(struct symtab_command *sym, void *ptr, char **sections)
 {
-	int				i;
+	uint32_t		i;
 	char			*stringtable;
 	struct nlist_64	*array;
 	char			c;
 
 	i = 0;
-	array = ptr + symoff;
-	stringtable = ptr + stroff;
-	while (i < nsyms)
+	array = ptr + sym->symoff;
+	stringtable = ptr + sym->stroff;
+	while (i < sym->nsyms)
 	{
-		c = ft_type(array[i].n_type, array[i].n_value);
-		if (c == ' ')
-			ft_printf("%.16x %c %s\n", array[i].n_value, c, stringtable + array[i].n_un.n_strx);
-		else
-			ft_printf("% 16c %c %s\n", ' ', c, stringtable + array[i].n_un.n_strx);
+		if (!(array[i].n_type & N_STAB))
+		{
+			c = ft_type(array[i].n_type, array[i].n_value, array[i].n_sect, sections);
+			if (c == 0)
+				return ;
+			if ((array[i].n_type & N_TYPE) == N_SECT)
+				ft_printf("%.16x %c %s\n", array[i].n_value, c, stringtable + array[i].n_un.n_strx);
+			else
+				ft_printf("% 16c %c %s\n", ' ', c, stringtable + array[i].n_un.n_strx);
+		}
 		i++;
 	}
 }
 
-void				ft_handle_64(void *ptr)
+char				**ft_getSection(char **sections, struct segment_command_64 *lc)
+{
+	struct section_64	*sec;
+	char				**tmp;
+	uint32_t			i;
+	uint32_t			j;
+
+	i = 0;
+	j = 0;
+	if (lc->nsects < 1)
+		return (sections);
+	while (sections && sections[i])
+		i++;
+	tmp = (char **)malloc(sizeof(char *) * (lc->nsects + i + 1));
+	tmp[lc->nsects + i] = NULL;
+	i = 0;
+	while (sections && sections[i])
+	{
+		tmp[i] = sections[i];
+		i++;
+	}
+	sec = (struct section_64 *)(lc + 1);
+	while (j < lc->nsects)
+	{
+		tmp[i + j++] = sec->sectname;
+		sec++;
+	}
+	free(sections);
+	return (tmp);
+}
+
+void				ft_handle_64(void *ptr, char **sections)
 {
 	int						ncmds;
 	int						i;
@@ -98,15 +113,29 @@ void				ft_handle_64(void *ptr)
 	header = (struct mach_header_64 *)ptr;
 	ncmds = header->ncmds;
 	lc = ptr + sizeof(*header);
-	ft_printf("HEADER -> %p\n", (struct mach_header_64 *)ptr);
-	ft_printf("HEADER SIZE OF -> %zu\n", sizeof(*header));
-	ft_printf("LC -> %p\n", lc);
+	// ft_printf("HEADER -> %p\n", (struct mach_header_64 *)ptr);
+	// ft_printf("HEADER SIZE OF -> %zu\n", sizeof(*header));
+	// ft_printf("LC -> %p\n", lc);
 	while (i < ncmds)
 	{
+		if (lc->cmd == LC_SEGMENT_64)
+		{
+			sections = ft_getSection(sections, (struct segment_command_64 *)lc);
+			// // TO DEL
+			// ft_printf("LA\n");
+			// int j = 0;
+			// while (sections && sections[j])
+			// {
+			// 	ft_putstr(sections[j]);
+			// 	ft_putchar('\n');
+			// 	j++;
+			// }
+			// // END TO DEL
+		}
 		if (lc->cmd == LC_SYMTAB)
 		{
 			sym = (struct symtab_command *)lc;
-			print_output(sym->nsyms, sym->symoff, sym->stroff, ptr);
+			print_output(sym, ptr, sections);
 			break;
 		}
 		lc = (void *)lc + lc->cmdsize;
@@ -117,11 +146,13 @@ void				ft_handle_64(void *ptr)
 void				ft_nm(void *ptr)
 {
 	uint32_t		magic_number;
+	char			**sections;
 
+	sections = NULL;
 	magic_number = *(uint32_t *)ptr;
-	ft_printf("%p\n", ptr);
+	// ft_printf("%p\n", ptr);
 	if (magic_number == MH_MAGIC_64)
-		ft_handle_64(ptr);
+		ft_handle_64(ptr, sections);
 }
 
 int					main(int ac, char **av)
