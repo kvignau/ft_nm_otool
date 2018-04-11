@@ -22,7 +22,13 @@
 # include "../ft_printf/includes/ft_printf.h"
 
 // void				ft_nm();
-
+typedef struct		s_lst
+{
+	char			type;
+	char			*name;
+	char			*value;
+	struct s_lst	*next;
+}					t_lst;
 
 int					ft_errors(char *str);
 

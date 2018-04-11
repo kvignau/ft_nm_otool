@@ -18,7 +18,7 @@ O_DIR_NM = obj/
 FT_PRINTF = ft_printf/
 
 CC = gcc
-FLAGS = -Wall -Wextra -Werror
+FLAGS = -Wall -Wextra -Werror -g
 
 C_FILES_NM = ft_nm.c
 # C_FILES_NM += ft_free.c
