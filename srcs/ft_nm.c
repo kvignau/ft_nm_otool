@@ -12,6 +12,13 @@
 
 #include "ft_nm.h"
 
+int		check_corrupt(size_t offset, size_t buf_size)
+{
+	if (offset > buf_size)
+		return (EXIT_FAILURE);
+	return (EXIT_SUCCESS);
+}
+
 void	free_lst(t_lst **lst)
 {
 	t_lst					*tmp;
@@ -31,30 +38,28 @@ void	free_lst(t_lst **lst)
 char	ft_type(uint8_t type, uint64_t value, uint8_t sect, char **sections)
 {
 	char					*section_name;
+	char					ret;
 
-	if ((type & N_TYPE) == N_INDR)
-		return ('I');
-	if ((type & N_TYPE) == N_STAB)
-		return ('-');
-	if ((type & N_TYPE) == N_UNDF)
-	{
-		if ((type & N_TYPE) == N_PBUD)
-			return ('u');
-		if ((type & N_EXT) == N_PBUD && value != 0)
-			return ('C');
-		return ('U');
-	}
-	if ((type & N_TYPE) == N_ABS)
-		return ('A');
-	if ((type & N_TYPE) == N_SECT)
+	ret = 0;
+	ret = ((type & N_TYPE) == N_INDR) ? 'I' : ret;
+	ret = (!ret && (type & N_TYPE) == N_STAB) ? '-' : ret;
+	ret = (!ret && (type & N_TYPE) == N_UNDF
+		&& (ret & N_EXT) && value != 0) ? 'C' : ret;
+	ret = (!ret && (type & N_TYPE) == N_UNDF
+		&& (type & N_TYPE) == N_PBUD) ? 'u' : ret;
+	ret = (!ret && (type & N_TYPE) == N_UNDF) ? 'U' : ret;
+	ret = (!ret && (type & N_TYPE) == N_ABS) ? 'A' : ret;
+	if (!ret && (type & N_TYPE) == N_SECT)
 	{
 		section_name = sections[sect - 1];
-		return (section_name && (!ft_strcmp(section_name, "__text") ||
-			!ft_strcmp(section_name, "__data") ||
-			!ft_strcmp(section_name, "__bss")))
-		? (ft_toupper(section_name[2])) : 'S';
+		ret = (section_name && (!ft_strcmp(section_name, "__text")
+			|| !ft_strcmp(section_name, "__data")
+			|| !ft_strcmp(section_name, "__bss"))) ?
+		ft_toupper(section_name[2]) : 'S';
 	}
-	return (' ');
+	if (!ret)
+		return (' ');
+	return !(type & N_EXT) ? ft_tolower(ret) : ret;
 }
 
 char	*ft_add_precision(uintmax_t value, int is64bit)
@@ -228,7 +233,7 @@ char	**ft_get_section(char **sections, struct segment_command_64 *lc)
 	return (tmp);
 }
 
-void	ft_handle_64(void *ptr, char **sections)
+int		ft_handle_64(void *ptr, char **sections, size_t buf_size)
 {
 	int						ncmds;
 	int						i;
@@ -238,9 +243,12 @@ void	ft_handle_64(void *ptr, char **sections)
 
 	i = 0;
 	header = (struct mach_header_64 *)ptr;
+	if (check_corrupt(sizeof(*header), buf_size)
+		|| check_corrupt(header->sizeofcmds, buf_size))
+		return (EXIT_FAILURE);
 	ncmds = header->ncmds;
 	lc = ptr + sizeof(*header);
-	while (i < ncmds)
+	while (i++ < ncmds)
 	{
 		if (lc->cmd == LC_SEGMENT_64)
 			sections = ft_get_section(sections,
@@ -252,19 +260,22 @@ void	ft_handle_64(void *ptr, char **sections)
 			break ;
 		}
 		lc = (void *)lc + lc->cmdsize;
-		i++;
 	}
+	return (EXIT_SUCCESS);
 }
 
-void	ft_nm(void *ptr)
+int		ft_nm(void *ptr, size_t buf_size)
 {
 	uint32_t				magic_number;
 	char					**sections;
 
-	sections = NULL;
+	sections = NULL;	
 	magic_number = *(uint32_t *)ptr;
 	if (magic_number == MH_MAGIC_64)
-		ft_handle_64(ptr, sections);
+		return (ft_handle_64(ptr, sections, buf_size));
+	else
+		return (EXIT_FAILURE);
+	return (EXIT_SUCCESS);
 }
 
 int		main(int ac, char **av)
@@ -273,6 +284,7 @@ int		main(int ac, char **av)
 	void					*ptr;
 	struct stat				buf;
 	int						i;
+	int						check;
 
 	i = 1;
 	if (ac < 2)
@@ -288,7 +300,9 @@ int		main(int ac, char **av)
 		if ((ptr = mmap(0, buf.st_size, PROT_READ, MAP_PRIVATE, fd, 0))
 			== MAP_FAILED)
 			return (ft_errors("mmap error"));
-		ft_nm(ptr);
+		check = ft_nm(ptr, buf.st_size);
+		if (check)
+			return (EXIT_FAILURE);
 		if (munmap(ptr, buf.st_size) < 0)
 			return (ft_errors("munmap (free) error"));
 		i++;
