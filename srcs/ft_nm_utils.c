@@ -28,7 +28,6 @@ void	free_lst(t_lst **lst)
 	}
 }
 
-// test avec uintmax_t is error change for (uint64_t value)
 char	ft_type(uint8_t type, uintmax_t value, uint8_t sect, char **sections)
 {
 	char					*section_name;

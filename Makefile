@@ -22,6 +22,7 @@ FLAGS = -Wall -Wextra -Werror -g
 
 C_FILES_NM = ft_nm.c
 C_FILES_NM += ft_nm_64.c
+C_FILES_NM += ft_nm_32.c
 C_FILES_NM += ft_nm_list.c
 C_FILES_NM += ft_nm_utils.c
 

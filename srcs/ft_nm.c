@@ -21,6 +21,8 @@ static int	ft_nm(void *ptr, size_t buf_size)
 	magic_number = *(uint32_t *)ptr;
 	if (magic_number == MH_MAGIC_64)
 		return (ft_handle_64(ptr, sections, buf_size));
+	if (magic_number == MH_MAGIC)
+		return (ft_handle_32(ptr, sections, buf_size));
 	else
 		return (EXIT_FAILURE);
 	return (EXIT_SUCCESS);
@@ -68,14 +70,14 @@ int			main(int ac, char **av)
 	return (EXIT_SUCCESS);
 }
 
-int		check_corrupt(size_t offset, size_t buf_size)
+int			check_corrupt(size_t offset, size_t buf_size)
 {
 	if (offset > buf_size)
 		return (EXIT_FAILURE);
 	return (EXIT_SUCCESS);
 }
 
-int		ft_errors(char *msg)
+int			ft_errors(char *msg)
 {
 	ft_putstr_fd(msg, 2);
 	ft_putstr_fd("\n", 2);
