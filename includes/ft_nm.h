@@ -21,12 +21,12 @@
 # include <fcntl.h>
 # include "../ft_printf/includes/ft_printf.h"
 
-// void				ft_nm();
 typedef struct		s_lst
 {
 	char			type;
 	char			*name;
 	char			*value;
+	uintmax_t		cmp_val;
 	struct s_lst	*next;
 }					t_lst;
 

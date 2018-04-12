@@ -59,7 +59,7 @@ char	ft_type(uint8_t type, uint64_t value, uint8_t sect, char **sections)
 	}
 	if (!ret)
 		return (' ');
-	return !(type & N_EXT) ? ft_tolower(ret) : ret;
+	return (!(type & N_EXT) ? ft_tolower(ret) : ret);
 }
 
 char	*ft_add_precision(uintmax_t value, int is64bit)
@@ -104,7 +104,7 @@ void	ft_add_list_next(t_lst *new_block, t_lst *tmp)
 		}
 		if (ft_strcmp(tmp->next->name, new_block->name) == 0)
 		{
-			if (tmp->next->value > new_block->value)
+			if (tmp->next->cmp_val > new_block->cmp_val)
 			{
 				new_block->next = tmp->next;
 				tmp->next = new_block;
@@ -128,7 +128,7 @@ void	ft_add_list(t_lst **lst, t_lst *new_block)
 	}
 	if (ft_strcmp(tmp->name, new_block->name) == 0)
 	{
-		if (tmp->value > new_block->value)
+		if (tmp->cmp_val > new_block->cmp_val)
 		{
 			new_block->next = tmp;
 			*lst = new_block;
@@ -146,6 +146,7 @@ void	ft_create_block(t_lst **lst, struct nlist_64 nlist64, char **sections,
 	new_block = (t_lst *)malloc(sizeof(t_lst));
 	new_block->value = (nlist64.n_type & N_TYPE) == N_SECT
 	? ft_add_precision(nlist64.n_value, 1) : NULL;
+	new_block->cmp_val = nlist64.n_value;
 	new_block->type = ft_type(nlist64.n_type, nlist64.n_value,
 		nlist64.n_sect, sections);
 	new_block->name = stringtable + nlist64.n_un.n_strx;
@@ -233,6 +234,42 @@ char	**ft_get_section(char **sections, struct segment_command_64 *lc)
 	return (tmp);
 }
 
+int		check_seg_corrupt(struct segment_command_64 *lc, size_t buf_size)
+{
+	if (lc->fileoff + lc->filesize > buf_size || lc->cmdsize % 8 != 0)
+		return (EXIT_FAILURE);
+	return (EXIT_SUCCESS);
+}
+
+int		check_lc_corrupt(void *ptr, size_t buf_size)
+{
+	int						i;
+	int						ncmds;
+	size_t					acc;
+	struct load_command		*tmp;
+	struct mach_header_64	*header;
+
+	i = 0;
+	acc = 0;
+	header = (struct mach_header_64 *)ptr;
+	ncmds = header->ncmds;
+	if (check_corrupt(sizeof(*header), buf_size)
+		|| check_corrupt(header->sizeofcmds, buf_size))
+		return (EXIT_FAILURE);
+	tmp = ptr + sizeof(*header);
+	while (i++ < ncmds)
+	{
+		if (tmp->cmd == LC_SEGMENT_64)
+			if (check_seg_corrupt((struct segment_command_64 *)tmp, buf_size))
+				return (EXIT_FAILURE);
+		acc += tmp->cmdsize;
+		if (acc > buf_size - sizeof(*header))
+			return (EXIT_FAILURE);
+		tmp = (void *)tmp + tmp->cmdsize;
+	}
+	return (EXIT_SUCCESS);
+}
+
 int		ft_handle_64(void *ptr, char **sections, size_t buf_size)
 {
 	int						ncmds;
@@ -243,11 +280,10 @@ int		ft_handle_64(void *ptr, char **sections, size_t buf_size)
 
 	i = 0;
 	header = (struct mach_header_64 *)ptr;
-	if (check_corrupt(sizeof(*header), buf_size)
-		|| check_corrupt(header->sizeofcmds, buf_size))
-		return (EXIT_FAILURE);
 	ncmds = header->ncmds;
 	lc = ptr + sizeof(*header);
+	if (check_lc_corrupt(ptr, buf_size))
+		return (ft_errors("File corrupted"));
 	while (i++ < ncmds)
 	{
 		if (lc->cmd == LC_SEGMENT_64)
@@ -257,7 +293,6 @@ int		ft_handle_64(void *ptr, char **sections, size_t buf_size)
 		{
 			sym = (struct symtab_command *)lc;
 			get_sym(sym, ptr, sections);
-			break ;
 		}
 		lc = (void *)lc + lc->cmdsize;
 	}
@@ -269,7 +304,7 @@ int		ft_nm(void *ptr, size_t buf_size)
 	uint32_t				magic_number;
 	char					**sections;
 
-	sections = NULL;	
+	sections = NULL;
 	magic_number = *(uint32_t *)ptr;
 	if (magic_number == MH_MAGIC_64)
 		return (ft_handle_64(ptr, sections, buf_size));
@@ -278,15 +313,30 @@ int		ft_nm(void *ptr, size_t buf_size)
 	return (EXIT_SUCCESS);
 }
 
+int		create_buff(int fd, struct stat buf)
+{
+	void					*ptr;
+	int						check;
+
+	check = 0;
+	if ((ptr = mmap(0, buf.st_size, PROT_READ, MAP_PRIVATE, fd, 0))
+		== MAP_FAILED)
+		return (ft_errors("mmap error"));
+	check += ft_nm(ptr, buf.st_size);
+	if (munmap(ptr, buf.st_size) < 0)
+		return (ft_errors("munmap error"));
+	return (check);
+}
+
 int		main(int ac, char **av)
 {
 	int						fd;
-	void					*ptr;
 	struct stat				buf;
 	int						i;
 	int						check;
 
 	i = 1;
+	check = 0;
 	if (ac < 2)
 		return (ft_errors("nm need at least 1 arg"));
 	while (i < ac)
@@ -297,16 +347,11 @@ int		main(int ac, char **av)
 			return (ft_errors("Open error"));
 		if (fstat(fd, &buf) < 0)
 			return (ft_errors("fstat error"));
-		if ((ptr = mmap(0, buf.st_size, PROT_READ, MAP_PRIVATE, fd, 0))
-			== MAP_FAILED)
-			return (ft_errors("mmap error"));
-		check = ft_nm(ptr, buf.st_size);
-		if (check)
-			return (EXIT_FAILURE);
-		if (munmap(ptr, buf.st_size) < 0)
-			return (ft_errors("munmap (free) error"));
+		check += create_buff(fd, buf);
 		i++;
 	}
+	if (check)
+		return (EXIT_FAILURE);
 	return (EXIT_SUCCESS);
 }
 
