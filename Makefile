@@ -21,7 +21,9 @@ CC = gcc
 FLAGS = -Wall -Wextra -Werror -g
 
 C_FILES_NM = ft_nm.c
-# C_FILES_NM += ft_free.c
+C_FILES_NM += ft_nm_64.c
+C_FILES_NM += ft_nm_list.c
+C_FILES_NM += ft_nm_utils.c
 
 O_FILES_NM = $(addprefix $(O_DIR_NM),$(C_FILES_NM:.c=.o))
 

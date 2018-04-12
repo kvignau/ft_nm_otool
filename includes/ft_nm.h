@@ -30,6 +30,14 @@ typedef struct		s_lst
 	struct s_lst	*next;
 }					t_lst;
 
+int					ft_handle_64(void *ptr, char **sections, size_t buf_size);
+char				*ft_add_precision(uintmax_t value, int is64bit);
+char				ft_type(uint8_t type, uintmax_t value, uint8_t sect,
+	char **sections);
+void				ft_create_block_64(t_lst **lst, struct nlist_64 nlist64,
+	char **sections, char *stringtable);
+int					check_corrupt(size_t offset, size_t buf_size);
+void				print_out(t_lst *lst, int is64bit);
 int					ft_errors(char *str);
 
 #endif

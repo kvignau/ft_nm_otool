@@ -12,294 +12,7 @@
 
 #include "ft_nm.h"
 
-int		check_corrupt(size_t offset, size_t buf_size)
-{
-	if (offset > buf_size)
-		return (EXIT_FAILURE);
-	return (EXIT_SUCCESS);
-}
-
-void	free_lst(t_lst **lst)
-{
-	t_lst					*tmp;
-
-	tmp = NULL;
-	while (*lst)
-	{
-		tmp = (*lst)->next;
-		if ((*lst)->value)
-			free((*lst)->value);
-		(*lst)->next = NULL;
-		free(*lst);
-		(*lst) = tmp;
-	}
-}
-
-char	ft_type(uint8_t type, uint64_t value, uint8_t sect, char **sections)
-{
-	char					*section_name;
-	char					ret;
-
-	ret = 0;
-	ret = ((type & N_TYPE) == N_INDR) ? 'I' : ret;
-	ret = (!ret && (type & N_TYPE) == N_STAB) ? '-' : ret;
-	ret = (!ret && (type & N_TYPE) == N_UNDF
-		&& (ret & N_EXT) && value != 0) ? 'C' : ret;
-	ret = (!ret && (type & N_TYPE) == N_UNDF
-		&& (type & N_TYPE) == N_PBUD) ? 'u' : ret;
-	ret = (!ret && (type & N_TYPE) == N_UNDF) ? 'U' : ret;
-	ret = (!ret && (type & N_TYPE) == N_ABS) ? 'A' : ret;
-	if (!ret && (type & N_TYPE) == N_SECT)
-	{
-		section_name = sections[sect - 1];
-		ret = (section_name && (!ft_strcmp(section_name, "__text")
-			|| !ft_strcmp(section_name, "__data")
-			|| !ft_strcmp(section_name, "__bss"))) ?
-		ft_toupper(section_name[2]) : 'S';
-	}
-	if (!ret)
-		return (' ');
-	return (!(type & N_EXT) ? ft_tolower(ret) : ret);
-}
-
-char	*ft_add_precision(uintmax_t value, int is64bit)
-{
-	char					*str;
-	char					*res;
-	int						system_type;
-	int						i;
-	int						len;
-
-	i = 0;
-	str = ft_itoa_base_uimax(value, 16);
-	len = ft_strlen(str);
-	system_type = is64bit == 1 ? 16 : 8;
-	res = (char *)malloc(sizeof(char) * (system_type + 1));
-	res[system_type] = '\0';
-	while (i < system_type - len)
-		res[i++] = '0';
-	while (i < system_type)
-	{
-		res[i] = str[i - (system_type - len)];
-		i++;
-	}
-	free(str);
-	return (res);
-}
-
-void	ft_add_list_next(t_lst *new_block, t_lst *tmp)
-{
-	while (tmp)
-	{
-		if (!tmp->next)
-		{
-			tmp->next = new_block;
-			break ;
-		}
-		if (ft_strcmp(tmp->next->name, new_block->name) > 0)
-		{
-			new_block->next = tmp->next;
-			tmp->next = new_block;
-			break ;
-		}
-		if (ft_strcmp(tmp->next->name, new_block->name) == 0)
-		{
-			if (tmp->next->cmp_val > new_block->cmp_val)
-			{
-				new_block->next = tmp->next;
-				tmp->next = new_block;
-				break ;
-			}
-		}
-		tmp = tmp->next;
-	}
-}
-
-void	ft_add_list(t_lst **lst, t_lst *new_block)
-{
-	t_lst					*tmp;
-
-	tmp = *lst;
-	if (ft_strcmp(tmp->name, new_block->name) > 0)
-	{
-		new_block->next = tmp;
-		*lst = new_block;
-		return ;
-	}
-	if (ft_strcmp(tmp->name, new_block->name) == 0)
-	{
-		if (tmp->cmp_val > new_block->cmp_val)
-		{
-			new_block->next = tmp;
-			*lst = new_block;
-			return ;
-		}
-	}
-	ft_add_list_next(new_block, tmp);
-}
-
-void	ft_create_block(t_lst **lst, struct nlist_64 nlist64, char **sections,
-	char *stringtable)
-{
-	t_lst					*new_block;
-
-	new_block = (t_lst *)malloc(sizeof(t_lst));
-	new_block->value = (nlist64.n_type & N_TYPE) == N_SECT
-	? ft_add_precision(nlist64.n_value, 1) : NULL;
-	new_block->cmp_val = nlist64.n_value;
-	new_block->type = ft_type(nlist64.n_type, nlist64.n_value,
-		nlist64.n_sect, sections);
-	new_block->name = stringtable + nlist64.n_un.n_strx;
-	new_block->next = NULL;
-	if (!(*lst))
-	{
-		(*lst) = new_block;
-		return ;
-	}
-	ft_add_list(lst, new_block);
-}
-
-void	print_out(t_lst *lst, int is64bit)
-{
-	t_lst					*tmp;
-
-	tmp = lst;
-	while (tmp)
-	{
-		if (tmp->value == NULL)
-			if (is64bit == 1)
-				ft_putstr("                ");
-			else
-				ft_putstr("        ");
-		else
-			ft_putstr(tmp->value);
-		ft_putchar(' ');
-		ft_putchar(tmp->type);
-		ft_putchar(' ');
-		ft_putstr(tmp->name);
-		ft_putchar('\n');
-		tmp = tmp->next;
-	}
-	free_lst(&lst);
-}
-
-void	get_sym(struct symtab_command *sym, void *ptr, char **sections)
-{
-	uint32_t				i;
-	char					*stringtable;
-	struct nlist_64			*array;
-	t_lst					*lst;
-
-	i = 0;
-	lst = NULL;
-	array = ptr + sym->symoff;
-	stringtable = ptr + sym->stroff;
-	while (i < sym->nsyms)
-	{
-		if (!(array[i].n_type & N_STAB))
-		{
-			ft_create_block(&lst, array[i], sections, stringtable);
-		}
-		i++;
-	}
-	free(sections);
-	print_out(lst, 1);
-}
-
-char	**ft_get_section(char **sections, struct segment_command_64 *lc)
-{
-	struct section_64		*sec;
-	char					**tmp;
-	uint32_t				i;
-	uint32_t				j;
-
-	i = 0;
-	j = 0;
-	if (lc->nsects < 1)
-		return (sections);
-	while (sections && sections[i])
-		i++;
-	tmp = (char **)malloc(sizeof(char *) * (lc->nsects + i + 1));
-	tmp[lc->nsects + i] = NULL;
-	i = 0;
-	while (sections && sections[i])
-	{
-		tmp[i] = sections[i];
-		i++;
-	}
-	sec = (struct section_64 *)(lc + 1);
-	while (j < lc->nsects)
-		tmp[i + j++] = (sec++)->sectname;
-	free(sections);
-	return (tmp);
-}
-
-int		check_seg_corrupt(struct segment_command_64 *lc, size_t buf_size)
-{
-	if (lc->fileoff + lc->filesize > buf_size || lc->cmdsize % 8 != 0)
-		return (EXIT_FAILURE);
-	return (EXIT_SUCCESS);
-}
-
-int		check_lc_corrupt(void *ptr, size_t buf_size)
-{
-	int						i;
-	int						ncmds;
-	size_t					acc;
-	struct load_command		*tmp;
-	struct mach_header_64	*header;
-
-	i = 0;
-	acc = 0;
-	header = (struct mach_header_64 *)ptr;
-	ncmds = header->ncmds;
-	if (check_corrupt(sizeof(*header), buf_size)
-		|| check_corrupt(header->sizeofcmds, buf_size))
-		return (EXIT_FAILURE);
-	tmp = ptr + sizeof(*header);
-	while (i++ < ncmds)
-	{
-		if (tmp->cmd == LC_SEGMENT_64)
-			if (check_seg_corrupt((struct segment_command_64 *)tmp, buf_size))
-				return (EXIT_FAILURE);
-		acc += tmp->cmdsize;
-		if (acc > buf_size - sizeof(*header))
-			return (EXIT_FAILURE);
-		tmp = (void *)tmp + tmp->cmdsize;
-	}
-	return (EXIT_SUCCESS);
-}
-
-int		ft_handle_64(void *ptr, char **sections, size_t buf_size)
-{
-	int						ncmds;
-	int						i;
-	struct mach_header_64	*header;
-	struct load_command		*lc;
-	struct symtab_command	*sym;
-
-	i = 0;
-	header = (struct mach_header_64 *)ptr;
-	ncmds = header->ncmds;
-	lc = ptr + sizeof(*header);
-	if (check_lc_corrupt(ptr, buf_size))
-		return (ft_errors("File corrupted"));
-	while (i++ < ncmds)
-	{
-		if (lc->cmd == LC_SEGMENT_64)
-			sections = ft_get_section(sections,
-				(struct segment_command_64 *)lc);
-		if (lc->cmd == LC_SYMTAB)
-		{
-			sym = (struct symtab_command *)lc;
-			get_sym(sym, ptr, sections);
-		}
-		lc = (void *)lc + lc->cmdsize;
-	}
-	return (EXIT_SUCCESS);
-}
-
-int		ft_nm(void *ptr, size_t buf_size)
+static int	ft_nm(void *ptr, size_t buf_size)
 {
 	uint32_t				magic_number;
 	char					**sections;
@@ -313,7 +26,7 @@ int		ft_nm(void *ptr, size_t buf_size)
 	return (EXIT_SUCCESS);
 }
 
-int		create_buff(int fd, struct stat buf)
+static int	create_buff(int fd, struct stat buf)
 {
 	void					*ptr;
 	int						check;
@@ -328,7 +41,7 @@ int		create_buff(int fd, struct stat buf)
 	return (check);
 }
 
-int		main(int ac, char **av)
+int			main(int ac, char **av)
 {
 	int						fd;
 	struct stat				buf;
@@ -351,6 +64,13 @@ int		main(int ac, char **av)
 		i++;
 	}
 	if (check)
+		return (EXIT_FAILURE);
+	return (EXIT_SUCCESS);
+}
+
+int		check_corrupt(size_t offset, size_t buf_size)
+{
+	if (offset > buf_size)
 		return (EXIT_FAILURE);
 	return (EXIT_SUCCESS);
 }
