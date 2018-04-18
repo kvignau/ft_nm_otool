@@ -19,6 +19,7 @@
 # include <mach-o/loader.h>
 # include <mach-o/nlist.h>
 # include <fcntl.h>
+# include <mach-o/fat.h>
 # include "../ft_printf/includes/ft_printf.h"
 
 typedef struct		s_lst
@@ -30,8 +31,14 @@ typedef struct		s_lst
 	struct s_lst	*next;
 }					t_lst;
 
+int					ft_nm(void *ptr, size_t buf_size);
+
 int					ft_handle_64(void *ptr, char **sections, size_t buf_size);
 int					ft_handle_32(void *ptr, char **sections, size_t buf_size);
+
+int					ft_nm_fat32(void *ptr, size_t buf_s);
+int					ft_nm_fat64(void *ptr, size_t buf_s);
+
 char				*ft_add_precision(uintmax_t value, int is64bit);
 char				ft_type(uint8_t type, uintmax_t value, uint8_t sect,
 	char **sections);

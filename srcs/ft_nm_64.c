@@ -110,9 +110,9 @@ int			ft_handle_64(void *ptr, char **sections, size_t buf_size)
 	i = 0;
 	header = (struct mach_header_64 *)ptr;
 	ncmds = header->ncmds;
-	lc = ptr + sizeof(*header);
 	if (check_lc_corrupt_64(ptr, buf_size))
-		return (ft_errors("File corrupted"));
+		return (ft_errors("Corrupted file"));
+	lc = ptr + sizeof(*header);
 	while (i++ < ncmds)
 	{
 		if (lc->cmd == LC_SEGMENT_64)

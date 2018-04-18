@@ -12,7 +12,7 @@
 
 #include "ft_nm.h"
 
-static int	ft_nm(void *ptr, size_t buf_size)
+int			ft_nm(void *ptr, size_t buf_size)
 {
 	uint32_t				magic_number;
 	char					**sections;
@@ -23,6 +23,10 @@ static int	ft_nm(void *ptr, size_t buf_size)
 		return (ft_handle_64(ptr, sections, buf_size));
 	if (magic_number == MH_MAGIC)
 		return (ft_handle_32(ptr, sections, buf_size));
+	if (magic_number == FAT_CIGAM)
+		return (ft_nm_fat32(ptr, buf_size));
+	if (magic_number == FAT_CIGAM_64)
+		return (ft_nm_fat64(ptr, buf_size));
 	else
 		return (EXIT_FAILURE);
 	return (EXIT_SUCCESS);
