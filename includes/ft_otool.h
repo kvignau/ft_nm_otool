@@ -33,7 +33,7 @@
 
 int					ft_otool(void *ptr, size_t buf_size);
 
-// int					ft_handle_64(void *ptr, char **sections, size_t buf_size);
+int					ft_handle_64(void *ptr, char **sections, size_t buf_size);
 // int					ft_handle_32(void *ptr, char **sections, size_t buf_size);
 
 // int					ft_nm_fat32(void *ptr, size_t buf_s);

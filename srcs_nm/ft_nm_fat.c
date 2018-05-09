@@ -6,31 +6,31 @@ uint32_t	reverse_endian(uint32_t narch)
 	return (narch << 16) | (narch >> 16);
 }
 
-static int	check_fat_corrupt_32(void *ptr, struct fat_header *header, size_t *buf_s)
-{
-	int					i;
-	int					acc;
-	int					nfat_arch;
-	struct fat_arch		*tmp;
+// static int	check_fat_corrupt_32(void *ptr, struct fat_header *header, size_t *buf_s)
+// {
+// 	int					i;
+// 	int					acc;
+// 	int					nfat_arch;
+// 	struct fat_arch		*tmp;
 
-	i = 0;
-	acc = 0;
-	nfat_arch = reverse_endian(header->nfat_arch);
-	if (check_corrupt(sizeof(*header), *buf_s))
-		return (EXIT_FAILURE);
-	tmp = ptr + sizeof(*header);
-	while (i++ < nfat_arch)
-	{
-		acc += sizeof(*tmp);
-		if (check_corrupt(acc, *buf_s))
-			return (EXIT_FAILURE);
-		tmp++;
-	}
-	(*buf_s) = (*buf_s) - acc;
-	return (EXIT_SUCCESS);
-}
+// 	i = 0;
+// 	acc = 0;
+// 	nfat_arch = reverse_endian(header->nfat_arch);
+// 	if (check_corrupt(sizeof(*header), *buf_s))
+// 		return (EXIT_FAILURE);
+// 	tmp = ptr + sizeof(*header);
+// 	while (i++ < nfat_arch)
+// 	{
+// 		acc += sizeof(*tmp);
+// 		if (check_corrupt(acc, *buf_s))
+// 			return (EXIT_FAILURE);
+// 		tmp++;
+// 	}
+// 	(*buf_s) = (*buf_s) - acc;
+// 	return (EXIT_SUCCESS);
+// }
 
-int		ft_nm_fat32(void *ptr, size_t buf_s)
+int		ft_nm_fat32(void *ptr, void *end_file)
 {
 	int					i;
 	int					nfat_arch;
@@ -41,8 +41,8 @@ int		ft_nm_fat32(void *ptr, size_t buf_s)
 	i = 0;
 	res = NULL;
 	header = (struct fat_header *)ptr;
-	if (check_fat_corrupt_32(ptr, header, &buf_s))
-		return (ft_errors("File corrupted"));
+	// if (check_fat_corrupt_32(ptr, header, &buf_s))
+	// 	return (ft_errors("File corrupted"));
 	nfat_arch = reverse_endian(header->nfat_arch);
 	arch = ptr + sizeof(*header);
 	while (i++ < nfat_arch)
@@ -51,38 +51,45 @@ int		ft_nm_fat32(void *ptr, size_t buf_s)
 			res = ptr + reverse_endian(arch->offset);
 		if (reverse_endian(arch->cputype) == CPU_TYPE_X86)
 			res = !res ? ptr + reverse_endian(arch->offset) : res;
+		if (reverse_endian(arch->cputype) == CPU_TYPE_POWERPC || reverse_endian(arch->cputype) == CPU_TYPE_POWERPC64)
+		{
+			ft_printf("YOOO\n");
+			if (ft_nm(ptr + reverse_endian(arch->offset), end_file, 1))
+				return (EXIT_FAILURE);
+			ft_printf("COUCOU\n");
+		}
 		arch++;
 	}
 	if (res)
-		return (ft_nm(res, buf_s));
+		return (ft_nm(res, end_file, 0));
 	return (EXIT_SUCCESS);
 }
 
-static int	check_fat_corrupt_64(void *ptr, struct fat_header *header, size_t *buf_s)
-{
-	int					i;
-	int					acc;
-	int					nfat_arch;
-	struct fat_arch_64	*tmp;
+// static int	check_fat_corrupt_64(void *ptr, struct fat_header *header, size_t *buf_s)
+// {
+// 	int					i;
+// 	int					acc;
+// 	int					nfat_arch;
+// 	struct fat_arch_64	*tmp;
 
-	i = 0;
-	acc = 0;
-	nfat_arch = reverse_endian(header->nfat_arch);
-	if (check_corrupt(sizeof(*header), *buf_s))
-		return (EXIT_FAILURE);
-	tmp = ptr + sizeof(*header);
-	while (i++ < nfat_arch)
-	{
-		acc += sizeof(*tmp);
-		if (check_corrupt(acc, *buf_s))
-			return (EXIT_FAILURE);
-		tmp++;
-	}
-	(*buf_s) = (*buf_s) - acc;
-	return (EXIT_SUCCESS);
-}
+// 	i = 0;
+// 	acc = 0;
+// 	nfat_arch = reverse_endian(header->nfat_arch);
+// 	if (check_corrupt(sizeof(*header), *buf_s))
+// 		return (EXIT_FAILURE);
+// 	tmp = ptr + sizeof(*header);
+// 	while (i++ < nfat_arch)
+// 	{
+// 		acc += sizeof(*tmp);
+// 		if (check_corrupt(acc, *buf_s))
+// 			return (EXIT_FAILURE);
+// 		tmp++;
+// 	}
+// 	(*buf_s) = (*buf_s) - acc;
+// 	return (EXIT_SUCCESS);
+// }
 
-int		ft_nm_fat64(void *ptr, size_t buf_s)
+int		ft_nm_fat64(void *ptr, void *end_file)
 {
 	int					i;
 	int					nfat_arch;
@@ -93,8 +100,8 @@ int		ft_nm_fat64(void *ptr, size_t buf_s)
 	i = 0;
 	res = NULL;
 	header = (struct fat_header *)ptr;
-	if (check_fat_corrupt_64(ptr, header, &buf_s))
-		return (ft_errors("File corrupted"));
+	// if (check_fat_corrupt_64(ptr, header, &buf_s))
+	// 	return (ft_errors("File corrupted"));
 	nfat_arch = reverse_endian(header->nfat_arch);
 	arch = ptr + sizeof(*header);
 	while (i++ < nfat_arch)
@@ -106,6 +113,6 @@ int		ft_nm_fat64(void *ptr, size_t buf_s)
 		arch++;
 	}
 	if (res)
-		return (ft_nm(res, buf_s));
+		return (ft_nm(res, end_file, 0));
 	return (EXIT_SUCCESS);
 }

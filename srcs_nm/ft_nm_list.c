@@ -45,6 +45,8 @@ static void		ft_add_list(t_lst **lst, t_lst *new_block)
 	t_lst					*tmp;
 
 	tmp = *lst;
+	// ft_printf("TMP NAME %s\n", tmp->name);
+	// ft_printf("TMP NAME\n");
 	if (ft_strcmp(tmp->name, new_block->name) > 0)
 	{
 		new_block->next = tmp;
@@ -69,6 +71,7 @@ void			ft_create_block_64(t_lst **lst, struct nlist_64 nlist64,
 	t_lst					*new_block;
 
 	new_block = (t_lst *)malloc(sizeof(t_lst));
+	new_block->is_ppc = 0;
 	new_block->value = (nlist64.n_value != 0)
 	|| (nlist64.n_value == 0 && (nlist64.n_type & N_TYPE) != N_UNDF)
 	? ft_add_precision(nlist64.n_value, 1) : NULL;
@@ -91,13 +94,15 @@ void			ft_create_block_32(t_lst **lst, struct nlist list,
 	t_lst					*new_block;
 
 	new_block = (t_lst *)malloc(sizeof(t_lst));
+	new_block->is_ppc = 0;
 	new_block->value = (list.n_value != 0)
 	|| (list.n_value == 0 && (list.n_type & N_TYPE) != N_UNDF)
 	? ft_add_precision(list.n_value, 0) : NULL;
 	new_block->cmp_val = list.n_value;
 	new_block->type = ft_type(list.n_type, list.n_value,
 		list.n_sect, sections);
-	new_block->name = stringtable + list.n_un.n_strx;
+	new_block->name = stringtable + reverse_endian(list.n_un.n_strx);
+	// new_block->name = reverse ? stringtable + reverse_endian(list.n_un.n_strx) : stringtable + reverse_endian(list.n_un.n_strx);
 	new_block->next = NULL;
 	if (!(*lst))
 	{
