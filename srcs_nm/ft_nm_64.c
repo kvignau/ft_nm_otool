@@ -16,10 +16,21 @@ struct nlist_64		ft_reverse_list_64(struct nlist_64 list)
 {
 	list.n_un.n_strx = reverse_endian(list.n_un.n_strx);
 	list.n_value = reverse_endian(list.n_value);
-	return list;
+	return (list);
 }
 
-static int	get_sym_64(struct symtab_command *sym, void *ptr, t_vars vars, int reverse)
+int					ft_check_blocks_64(struct nlist_64 list, char *stringtable,
+	t_vars vars, t_lst **lst)
+{
+	if (ft_check_addresses(stringtable + list.n_un.n_strx, vars.end_file))
+		return (EXIT_FAILURE);
+	if (ft_create_block_64(lst, list, vars.sections, stringtable))
+		return (EXIT_FAILURE);
+	return (EXIT_SUCCESS);
+}
+
+static int			get_sym_64(struct symtab_command *sym, void *ptr,
+	t_vars vars, int reverse)
 {
 	uint32_t				i;
 	char					*stringtable;
@@ -36,14 +47,10 @@ static int	get_sym_64(struct symtab_command *sym, void *ptr, t_vars vars, int re
 	stringtable = ptr + sym->stroff;
 	while (i < sym->nsyms)
 	{
+		array[i] = reverse ? ft_reverse_list_64(array[i]) : array[i];
 		if (!(array[i].n_type & N_STAB))
-		{
-			array[i] = reverse ? ft_reverse_list_64(array[i]) : array[i];
-			if (ft_check_addresses(stringtable + array[i].n_un.n_strx, vars.end_file))
+			if (ft_check_blocks_64(array[i], stringtable, vars, &lst))
 				return (EXIT_FAILURE);
-			if (ft_create_block_64(&lst, array[i], vars.sections, stringtable))
-				return (EXIT_FAILURE);
-		}
 		i++;
 	}
 	free(vars.sections);
@@ -51,7 +58,8 @@ static int	get_sym_64(struct symtab_command *sym, void *ptr, t_vars vars, int re
 	return (EXIT_SUCCESS);
 }
 
-static char	**ft_get_section_64(char **sections, struct segment_command_64 *lc, int reverse)
+static char			**ft_get_section_64(char **sections,
+	struct segment_command_64 *lc, int reverse)
 {
 	struct section_64		*sec;
 	char					**tmp;
@@ -80,11 +88,11 @@ static char	**ft_get_section_64(char **sections, struct segment_command_64 *lc, 
 	return (tmp);
 }
 
-int			ft_handle_64(void *ptr, t_vars vars, int reverse)
+int					ft_handle_64(void *ptr, t_vars vars, int reverse)
 {
 	int						ncmds;
 	int						i;
-	struct mach_header_64		*header;
+	struct mach_header_64	*header;
 	struct load_command		*lc;
 
 	i = 0;
@@ -100,12 +108,11 @@ int			ft_handle_64(void *ptr, t_vars vars, int reverse)
 			vars.sections = ft_get_section_64(vars.sections,
 				(struct segment_command_64 *)lc, reverse);
 		if (lc->cmd == LC_SYMTAB)
-			return get_sym_64((struct symtab_command *)lc, ptr, vars, reverse) ?
-				(ft_errors("Corrupted file")) : (EXIT_SUCCESS);
+			return (get_sym_64((struct symtab_command *)lc, ptr, vars, reverse))
+			? (ft_errors("Corrupted file")) : (EXIT_SUCCESS);
 		if (ft_check_addresses((void *)lc + lc->cmdsize, vars.end_file))
 			return (ft_errors("Corrupted file"));
 		lc = (void *)lc + lc->cmdsize;
 	}
 	return (EXIT_FAILURE);
 }
-

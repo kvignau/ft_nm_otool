@@ -63,7 +63,7 @@ static void		ft_add_list(t_lst **lst, t_lst *new_block)
 	ft_add_list_next(new_block, tmp);
 }
 
-int			ft_create_block_64(t_lst **lst, struct nlist_64 nlist64,
+int				ft_create_block_64(t_lst **lst, struct nlist_64 nlist64,
 	char **sections, char *stringtable)
 {
 	t_lst					*new_block;
@@ -88,7 +88,7 @@ int			ft_create_block_64(t_lst **lst, struct nlist_64 nlist64,
 	return (EXIT_SUCCESS);
 }
 
-int			ft_create_block_32(t_lst **lst, struct nlist list,
+int				ft_create_block_32(t_lst **lst, struct nlist list,
 	char **sections, char *stringtable)
 {
 	t_lst					*new_block;

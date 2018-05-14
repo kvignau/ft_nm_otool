@@ -27,7 +27,6 @@ int			ft_nm(void *ptr, t_vars vars)
 	if (ft_check_addresses(ptr, vars.end_file))
 		return (ft_errors("Corrupted file"));
 	magic_number = *(uint32_t *)ptr;
-	// ft_printf("AFTER MAGIC NUMBER %x\n", magic_number);
 	if (magic_number == MH_MAGIC_64)
 		return (ft_handle_64(ptr, vars, 0));
 	if (magic_number == MH_CIGAM_64)
