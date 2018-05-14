@@ -39,6 +39,8 @@ static int	get_sym_64(struct symtab_command *sym, void *ptr, t_vars vars, int re
 		if (!(array[i].n_type & N_STAB))
 		{
 			array[i] = reverse ? ft_reverse_list_64(array[i]) : array[i];
+			if (ft_check_addresses(stringtable + array[i].n_un.n_strx, vars.end_file))
+				return (EXIT_FAILURE);
 			if (ft_create_block_64(&lst, array[i], vars.sections, stringtable))
 				return (EXIT_FAILURE);
 		}
@@ -98,12 +100,12 @@ int			ft_handle_64(void *ptr, t_vars vars, int reverse)
 			vars.sections = ft_get_section_64(vars.sections,
 				(struct segment_command_64 *)lc, reverse);
 		if (lc->cmd == LC_SYMTAB)
-			if (get_sym_64((struct symtab_command *)lc, ptr, vars, reverse))
-				return (ft_errors("Corrupted file"));
+			return get_sym_64((struct symtab_command *)lc, ptr, vars, reverse) ?
+				(ft_errors("Corrupted file")) : (EXIT_SUCCESS);
 		if (ft_check_addresses((void *)lc + lc->cmdsize, vars.end_file))
 			return (ft_errors("Corrupted file"));
 		lc = (void *)lc + lc->cmdsize;
 	}
-	return (EXIT_SUCCESS);
+	return (EXIT_FAILURE);
 }
 

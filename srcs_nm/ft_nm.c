@@ -40,8 +40,6 @@ int			ft_nm(void *ptr, t_vars vars)
 		return (ft_nm_fat32(ptr, vars));
 	if (magic_number == FAT_CIGAM_64)
 		return (ft_nm_fat64(ptr, vars));
-	else
-		return (EXIT_FAILURE);
 	return (EXIT_SUCCESS);
 }
 

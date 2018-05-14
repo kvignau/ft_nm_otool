@@ -101,7 +101,7 @@ int			ft_create_block_32(t_lst **lst, struct nlist list,
 	new_block->type = ft_type(list.n_type, list.n_value,
 		list.n_sect, sections);
 	new_block->name = stringtable + list.n_un.n_strx;
-	if (!ft_strlen(new_block->name))
+	if (!new_block->name)
 		return (EXIT_FAILURE);
 	new_block->next = NULL;
 	if (!(*lst))
