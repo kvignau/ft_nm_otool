@@ -19,41 +19,33 @@ int			ft_check_addresses(void *ptr, void *buf)
 	return (EXIT_SUCCESS);
 }
 
-int			ft_nm(void *ptr, void *end_file, int reverse)
+int			ft_nm(void *ptr, t_vars vars)
 {
 	uint32_t				magic_number;
-	char					**sections;
 
-	sections = NULL;
 	magic_number = 0;
-	// ft_printf("BUF SIZE %zu, UINT32 %zu\n", buf_size, sizeof(uint32_t));
-	// if (ft_check_add(ptr, ptr + buf_size))
-	// {
-	// 	ft_printf("\n\nYESSSSSSSSSSSSSS\n\n");
-	// 	return (EXIT_FAILURE);
-	// }
-	if (ft_check_addresses(ptr, end_file))
+	if (ft_check_addresses(ptr, vars.end_file))
 		return (ft_errors("Corrupted file"));
 	magic_number = *(uint32_t *)ptr;
-	ft_printf("AFTER MAGIC NUMBER %x\n", magic_number);
+	// ft_printf("AFTER MAGIC NUMBER %x\n", magic_number);
 	if (magic_number == MH_MAGIC_64)
-		return (ft_handle_64(ptr, sections, end_file, reverse));
+		return (ft_handle_64(ptr, vars, 0));
 	if (magic_number == MH_CIGAM_64)
-		return (ft_handle_64(ptr, sections, end_file, 1));
+		return (ft_handle_64(ptr, vars, 1));
 	if (magic_number == MH_MAGIC)
-		return (ft_handle_32(ptr, sections, end_file, reverse));
+		return (ft_handle_32(ptr, vars, 0));
 	if (magic_number == MH_CIGAM)
-		return (ft_handle_32(ptr, sections, end_file, 1));
+		return (ft_handle_32(ptr, vars, 1));
 	if (magic_number == FAT_CIGAM)
-		return (ft_nm_fat32(ptr, end_file));
+		return (ft_nm_fat32(ptr, vars));
 	if (magic_number == FAT_CIGAM_64)
-		return (ft_nm_fat64(ptr, end_file));
+		return (ft_nm_fat64(ptr, vars));
 	else
 		return (EXIT_FAILURE);
 	return (EXIT_SUCCESS);
 }
 
-static int	create_buff(int fd, struct stat buf)
+static int	create_buff(int fd, struct stat buf, t_vars vars)
 {
 	void					*ptr;
 	int						check;
@@ -65,7 +57,8 @@ static int	create_buff(int fd, struct stat buf)
 		close(fd);
 		return (ft_errors("mmap error"));
 	}
-	check += ft_nm(ptr, ptr + buf.st_size, 0);
+	vars.end_file = ptr + buf.st_size;
+	check += ft_nm(ptr, vars);
 	if (munmap(ptr, buf.st_size) < 0)
 	{
 		close(fd);
@@ -74,12 +67,23 @@ static int	create_buff(int fd, struct stat buf)
 	return (check);
 }
 
+t_vars		ft_init_vars(char *arg)
+{
+	t_vars	tmp;
+
+	tmp.arg = arg;
+	tmp.sections = NULL;
+	tmp.end_file = 0;
+	return (tmp);
+}
+
 int			main(int ac, char **av)
 {
 	int						fd;
 	struct stat				buf;
 	int						i;
 	int						check;
+	t_vars					vars;
 
 	i = 1;
 	check = 0;
@@ -87,13 +91,14 @@ int			main(int ac, char **av)
 		return (ft_errors("nm need at least 1 arg"));
 	while (i < ac)
 	{
+		vars = ft_init_vars(av[i]);
 		if (ac != 2)
 			ft_printf("\n%s:\n", av[i]);
 		if ((fd = open(av[i], O_RDONLY)) < 0)
 			return (ft_errors("Open error"));
 		if (fstat(fd, &buf) < 0)
 			return (ft_errors("fstat error"));
-		check += create_buff(fd, buf);
+		check += create_buff(fd, buf, vars);
 		i++;
 	}
 	if (check)

@@ -6,113 +6,95 @@ uint32_t	reverse_endian(uint32_t narch)
 	return (narch << 16) | (narch >> 16);
 }
 
-// static int	check_fat_corrupt_32(void *ptr, struct fat_header *header, size_t *buf_s)
-// {
-// 	int					i;
-// 	int					acc;
-// 	int					nfat_arch;
-// 	struct fat_arch		*tmp;
-
-// 	i = 0;
-// 	acc = 0;
-// 	nfat_arch = reverse_endian(header->nfat_arch);
-// 	if (check_corrupt(sizeof(*header), *buf_s))
-// 		return (EXIT_FAILURE);
-// 	tmp = ptr + sizeof(*header);
-// 	while (i++ < nfat_arch)
-// 	{
-// 		acc += sizeof(*tmp);
-// 		if (check_corrupt(acc, *buf_s))
-// 			return (EXIT_FAILURE);
-// 		tmp++;
-// 	}
-// 	(*buf_s) = (*buf_s) - acc;
-// 	return (EXIT_SUCCESS);
-// }
-
-int		ft_nm_fat32(void *ptr, void *end_file)
+int		ft_return_arch(void *res, int env, t_vars vars)
 {
-	int					i;
-	int					nfat_arch;
-	struct fat_header	*header;
-	struct fat_arch		*arch;
-	void				*res;
+	if (env == 3)
+		ft_printf("\n%s (for architecture amd64):\n", vars.arg);
+	else if (env)
+		ft_printf("\n%s (for architecture i386):\n", vars.arg);
+	return (ft_nm(res, vars));
+}
+
+int		ft_find_arch(int nfat_arch, void *ptr, struct fat_arch *arch, t_vars vars)
+{
+	int		i;
+	int		env;
+	void	*res;
 
 	i = 0;
+	env = 0;
 	res = NULL;
-	header = (struct fat_header *)ptr;
-	// if (check_fat_corrupt_32(ptr, header, &buf_s))
-	// 	return (ft_errors("File corrupted"));
-	nfat_arch = reverse_endian(header->nfat_arch);
-	arch = ptr + sizeof(*header);
 	while (i++ < nfat_arch)
 	{
 		if (reverse_endian(arch->cputype) == CPU_TYPE_X86_64)
-			res = ptr + reverse_endian(arch->offset);
+			return env ? (ft_return_arch(ptr + reverse_endian(arch->offset), 3, vars)) :
+			(ft_return_arch(ptr + reverse_endian(arch->offset), 0, vars));
 		if (reverse_endian(arch->cputype) == CPU_TYPE_X86)
 			res = !res ? ptr + reverse_endian(arch->offset) : res;
-		if (reverse_endian(arch->cputype) == CPU_TYPE_POWERPC || reverse_endian(arch->cputype) == CPU_TYPE_POWERPC64)
+		if (reverse_endian(arch->cputype) == CPU_TYPE_POWERPC ||
+			reverse_endian(arch->cputype) == CPU_TYPE_POWERPC64)
 		{
-			ft_printf("YOOO\n");
-			if (ft_nm(ptr + reverse_endian(arch->offset), end_file, 1))
+			env = ft_printf("\n%s (for architecture ppc):\n", vars.arg);
+			if (ft_nm(ptr + reverse_endian(arch->offset), vars))
 				return (EXIT_FAILURE);
-			ft_printf("COUCOU\n");
 		}
 		arch++;
 	}
-	if (res)
-		return (ft_nm(res, end_file, 0));
-	return (EXIT_SUCCESS);
+	return res ? ft_return_arch(res, env, vars) : (EXIT_SUCCESS);
 }
 
-// static int	check_fat_corrupt_64(void *ptr, struct fat_header *header, size_t *buf_s)
-// {
-// 	int					i;
-// 	int					acc;
-// 	int					nfat_arch;
-// 	struct fat_arch_64	*tmp;
-
-// 	i = 0;
-// 	acc = 0;
-// 	nfat_arch = reverse_endian(header->nfat_arch);
-// 	if (check_corrupt(sizeof(*header), *buf_s))
-// 		return (EXIT_FAILURE);
-// 	tmp = ptr + sizeof(*header);
-// 	while (i++ < nfat_arch)
-// 	{
-// 		acc += sizeof(*tmp);
-// 		if (check_corrupt(acc, *buf_s))
-// 			return (EXIT_FAILURE);
-// 		tmp++;
-// 	}
-// 	(*buf_s) = (*buf_s) - acc;
-// 	return (EXIT_SUCCESS);
-// }
-
-int		ft_nm_fat64(void *ptr, void *end_file)
+int		ft_nm_fat32(void *ptr, t_vars vars)
 {
-	int					i;
 	int					nfat_arch;
 	struct fat_header	*header;
-	struct fat_arch_64	*arch;
-	void				*res;
+	struct fat_arch		*arch;
+
+	header = (struct fat_header *)ptr;
+	nfat_arch = reverse_endian(header->nfat_arch);
+	if (ft_check_addresses(ptr + sizeof(*header), vars.end_file))
+		return (ft_errors("Corrupted file"));
+	arch = ptr + sizeof(*header);
+	return (ft_find_arch(nfat_arch, ptr, arch, vars));
+}
+
+int		ft_find_arch_64(int nfat_arch, void *ptr, struct fat_arch_64 *arch, t_vars vars)
+{
+	int		i;
+	int		env;
+	void	*res;
 
 	i = 0;
+	env = 0;
 	res = NULL;
-	header = (struct fat_header *)ptr;
-	// if (check_fat_corrupt_64(ptr, header, &buf_s))
-	// 	return (ft_errors("File corrupted"));
-	nfat_arch = reverse_endian(header->nfat_arch);
-	arch = ptr + sizeof(*header);
 	while (i++ < nfat_arch)
 	{
 		if (reverse_endian(arch->cputype) == CPU_TYPE_X86_64)
-			res = ptr + reverse_endian(arch->offset);
+			return env ? (ft_return_arch(ptr + reverse_endian(arch->offset), 3, vars)) :
+			(ft_return_arch(ptr + reverse_endian(arch->offset), 0, vars));
 		if (reverse_endian(arch->cputype) == CPU_TYPE_X86)
 			res = !res ? ptr + reverse_endian(arch->offset) : res;
+		if (reverse_endian(arch->cputype) == CPU_TYPE_POWERPC ||
+			reverse_endian(arch->cputype) == CPU_TYPE_POWERPC64)
+		{
+			env = ft_printf("\n%s (for architecture ppc):\n", vars.arg);
+			if (ft_nm(ptr + reverse_endian(arch->offset), vars))
+				return (EXIT_FAILURE);
+		}
 		arch++;
 	}
-	if (res)
-		return (ft_nm(res, end_file, 0));
-	return (EXIT_SUCCESS);
+	return res ? ft_return_arch(res, env, vars) : (EXIT_SUCCESS);
+}
+
+int		ft_nm_fat64(void *ptr, t_vars vars)
+{
+	int					nfat_arch;
+	struct fat_header	*header;
+	struct fat_arch_64	*arch;
+
+	header = (struct fat_header *)ptr;
+	nfat_arch = reverse_endian(header->nfat_arch);
+	if (ft_check_addresses(ptr + sizeof(*header), vars.end_file))
+		return (ft_errors("Corrupted file"));
+	arch = ptr + sizeof(*header);
+	return (ft_find_arch_64(nfat_arch, ptr, arch, vars));
 }
