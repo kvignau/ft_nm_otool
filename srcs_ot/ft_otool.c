@@ -42,10 +42,10 @@ int			ft_otool(void *ptr, t_vars vars)
 		return (ft_handle_32(ptr, vars, 0));
 	if (magic_number == MH_CIGAM)
 		return (ft_handle_32(ptr, vars, 1));
-	// if (magic_number == FAT_CIGAM)
-	// 	return (ft_nm_fat32(ptr, vars));
-	// if (magic_number == FAT_CIGAM_64)
-	// 	return (ft_nm_fat64(ptr, vars));
+	if (magic_number == FAT_CIGAM)
+		return (ft_otool_fat32(ptr, vars));
+	if (magic_number == FAT_CIGAM_64)
+		return (ft_otool_fat64(ptr, vars));
 	return (EXIT_SUCCESS);
 }
 
@@ -78,6 +78,7 @@ t_vars		ft_init_vars(char *arg)
 	tmp.arg = arg;
 	tmp.little_endian = 0;
 	tmp.end_file = 0;
+	tmp.env = 0;
 	return (tmp);
 }
 

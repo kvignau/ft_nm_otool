@@ -36,6 +36,7 @@ typedef struct		s_vars
 	char			*arg;
 	int				little_endian;
 	void			*end_file;
+	int				env;
 }					t_vars;
 
 int					ft_otool(void *ptr, t_vars vars);
@@ -44,12 +45,12 @@ uint32_t			reverse_endian(uint32_t narch);
 int					ft_handle_64(void *ptr, t_vars vars, int reverse);
 int					ft_handle_32(void *ptr, t_vars vars, int reverse);
 
-// int					ft_nm_fat32(void *ptr, size_t buf_s);
-// int					ft_nm_fat64(void *ptr, size_t buf_s);
+int					ft_otool_fat32(void *ptr, t_vars vars);
+int					ft_otool_fat64(void *ptr, t_vars vars);
 
 void				ft_add_precision(uintmax_t value, int is64bit);
 
-void				print_byte_to_hex(char byte);
+void				print_byte_to_hex(char byte, int env, uintmax_t x);
 // char				ft_type(uint8_t type, uintmax_t value, uint8_t sect,
 // 	char **sections);
 // void				ft_create_block_64(t_lst **lst, struct nlist_64 nlist64,
@@ -57,6 +58,7 @@ void				print_byte_to_hex(char byte);
 // void				ft_create_block_32(t_lst **lst, struct nlist list,
 // 	char **sections, char *stringtable);
 int					check_corrupt(void *ptr, void *buf);
+int					check_corrupt_size(uint32_t section, uint32_t size);
 // void				print_out(t_lst *lst, int is64bit);
 int					ft_errors(char *str);
 

@@ -23,8 +23,10 @@ int						ft_display_32(struct section *sec, char *header, t_vars vars)
 {
 	uint32_t			i;
 	uint32_t			y;
+	uintmax_t			x;
 
 	i = 0;
+	x = 1;
 	while (i < sec->size)
 	{
 		ft_add_precision((uintmax_t)sec->addr, 0);
@@ -34,7 +36,8 @@ int						ft_display_32(struct section *sec, char *header, t_vars vars)
 		{
 			if (check_corrupt(sec->offset + header + y + i, vars.end_file))
 				return (ft_errors("Corrupted file"));
-			print_byte_to_hex(*(sec->offset + header + y + i));
+			print_byte_to_hex(*(sec->offset + header + y + i), vars.env, x);
+			x++;
 		}
 		ft_putchar('\n');
 		if (check_corrupt_size((uint32_t)sec->addr + 16, (uint32_t)vars.end_file))
@@ -52,6 +55,14 @@ struct segment_command	*ft_reverse_32(struct segment_command *segment)
 	return (segment);
 }
 
+struct section			*ft_reverse_sec(struct section *sec)
+{
+	sec->addr = reverse_endian(sec->addr);
+	sec->offset = reverse_endian(sec->offset);
+	sec->size = reverse_endian(sec->size);
+	return (sec);
+}
+
 static int			ft_get_section_32(struct segment_command *segment, int reverse, t_vars vars, char *header)
 {
 	struct section		*sec;
@@ -62,8 +73,10 @@ static int			ft_get_section_32(struct segment_command *segment, int reverse, t_v
 	if (check_corrupt((struct section *)(segment + 1), vars.end_file))
 		return (ft_errors("Corrupted file"));
 	sec = (struct section *)(segment + 1);
-	ft_putstr(vars.arg);
-	ft_putstr(":\nContents of (__TEXT,__text) section\n");
+	if (!vars.env)
+		ft_printf("%s:\n", vars.arg);
+	ft_putstr("Contents of (__TEXT,__text) section\n");
+	sec = reverse ? ft_reverse_sec(sec) : sec;
 	while (segment->nsects-- > 0)
 	{
 		if (ft_strcmp(sec->sectname, SECT_TEXT) == 0)
@@ -119,14 +132,15 @@ int					ft_handle_32(void *ptr, t_vars vars, int reverse)
 	{
 		seg = reverse ? ft_reverse_32(seg) : seg;
 		if (ft_strcmp(seg->segname, SEG_TEXT) == 0)
-		{
-			if (ft_get_section_32(seg, reverse, vars, (char *)header))
-				return (EXIT_SUCCESS);
-		}
+			return (ft_get_section_32(seg, reverse, vars, (char *)header))
+			? (EXIT_FAILURE) : (EXIT_SUCCESS);
 		if (seg->cmd == LC_SEGMENT)
+		{
 			if (ft_check_segment_32(seg, header, reverse, vars))
 				return (EXIT_FAILURE);
-		if (check_corrupt((void *)seg + seg->cmdsize, vars.end_file))
+		}
+		if (check_corrupt((void *)seg + seg->cmdsize, vars.end_file)
+			|| seg->cmdsize % 4 != 0)
 			return (ft_errors("Corrupted file"));
 		seg = (void *)seg + seg->cmdsize;
 	}

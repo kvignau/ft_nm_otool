@@ -38,7 +38,7 @@ void			ft_add_precision(uintmax_t value, int is64bit)
 	free(res);
 }
 
-void				print_byte_to_hex(char byte)
+void				print_byte_to_hex(char byte, int env, uintmax_t x)
 {
 	char			str[2];
 	short			count;
@@ -58,15 +58,23 @@ void				print_byte_to_hex(char byte)
 	}
 	ft_putchar(str[1]);
 	ft_putchar(str[0]);
-	ft_putchar(' ');
+	if (env > 3)
+	{
+		if (x % 4 == 0)
+			ft_putchar(' ');
+	}
+	else
+		ft_putchar(' ');
 }
 
 int						ft_display(struct section_64 *sec, char *header, void *tmp, t_vars vars)
 {
 	uint64_t			i;
 	uint64_t			y;
+	uintmax_t			x;
 
 	i = 0;
+	x = 1;
 	if (check_corrupt((void *)sec->addr + sec->size, vars.end_file))
 		return (ft_errors("Corrupted file"));
 	while (i < sec->size)
@@ -75,7 +83,12 @@ int						ft_display(struct section_64 *sec, char *header, void *tmp, t_vars vars
 		ft_putchar('	');
 		y = -1;
 		while (++y < 16 && y + i < sec->size)
-			print_byte_to_hex(*(sec->offset + header + y + i));
+		{
+			if (check_corrupt(sec->offset + header + y + i, vars.end_file))
+				return (ft_errors("Corrupted file"));
+			print_byte_to_hex(*(sec->offset + header + y + i), vars.env, x);
+			x++;
+		}
 		ft_putchar('\n');
 		tmp = tmp + 16;
 		i += 16;
@@ -101,8 +114,9 @@ static int			ft_get_section_64(struct segment_command_64 *segment, int reverse, 
 	if (check_corrupt((struct section_64 *)(segment + 1), vars.end_file))
 		return (ft_errors("Corrupted file"));
 	sec = (struct section_64 *)(segment + 1);
-	ft_putstr(vars.arg);
-	ft_putstr(":\nContents of (__TEXT,__text) section\n");
+	if (!vars.env)
+		ft_printf("%s:\n", vars.arg);
+	ft_putstr("Contents of (__TEXT,__text) section\n");
 	while (segment->nsects-- > 0)
 	{
 		if (ft_strcmp(sec->sectname, SECT_TEXT) == 0)
@@ -159,12 +173,13 @@ int					ft_handle_64(void *ptr, t_vars vars, int reverse)
 	{
 		seg = reverse ? ft_reverse(seg) : seg;
 		if (ft_strcmp(seg->segname, SEG_TEXT) == 0)
-			if (ft_get_section_64(seg, reverse, vars, (char *)header))
-				return (EXIT_SUCCESS);
+			return (ft_get_section_64(seg, reverse, vars, (char *)header))
+			? (EXIT_FAILURE) : (EXIT_SUCCESS);
 		if (seg->cmd == LC_SEGMENT_64)
 			if (ft_check_segment_64(seg, header, reverse, vars))
 				return (EXIT_FAILURE);
-		if (check_corrupt((void *)seg + seg->cmdsize, vars.end_file))
+		if (check_corrupt((void *)seg + seg->cmdsize, vars.end_file)
+			|| seg->cmdsize % 8 != 0)
 			return (ft_errors("Corrupted file"));
 		seg = (void *)seg + seg->cmdsize;
 	}
