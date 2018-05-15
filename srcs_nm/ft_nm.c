@@ -71,6 +71,7 @@ t_vars		ft_init_vars(char *arg)
 	tmp.arg = arg;
 	tmp.sections = NULL;
 	tmp.end_file = 0;
+	tmp.env = 0;
 	return (tmp);
 }
 

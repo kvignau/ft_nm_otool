@@ -26,6 +26,7 @@ typedef struct		s_vars
 {
 	char			*arg;
 	char			**sections;
+	int				env;
 	void			*end_file;
 }					t_vars;
 

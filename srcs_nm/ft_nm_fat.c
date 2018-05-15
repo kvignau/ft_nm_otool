@@ -31,16 +31,16 @@ int			ft_find_arch(int nfat_arch, void *ptr, struct fat_arch *arch,
 	t_vars vars)
 {
 	int		i;
-	int		env;
 	void	*res;
 
 	i = 0;
-	env = 0;
 	res = NULL;
 	while (i++ < nfat_arch)
 	{
+		if (reverse_endian(arch->offset) < 1)
+			return (ft_errors("Corrupted file"));
 		if (reverse_endian(arch->cputype) == CPU_TYPE_X86_64)
-			return (env)
+			return (vars.env)
 			? (ft_return_arch(ptr + reverse_endian(arch->offset), 3, vars)) :
 			(ft_return_arch(ptr + reverse_endian(arch->offset), 0, vars));
 		if (reverse_endian(arch->cputype) == CPU_TYPE_X86)
@@ -48,13 +48,13 @@ int			ft_find_arch(int nfat_arch, void *ptr, struct fat_arch *arch,
 		if (reverse_endian(arch->cputype) == CPU_TYPE_POWERPC ||
 			reverse_endian(arch->cputype) == CPU_TYPE_POWERPC64)
 		{
-			env = ft_printf("\n%s (for architecture ppc):\n", vars.arg);
+			vars.env = ft_printf("\n%s (for architecture ppc):\n", vars.arg);
 			if (ft_nm(ptr + reverse_endian(arch->offset), vars))
 				return (EXIT_FAILURE);
 		}
 		arch++;
 	}
-	return (res) ? (ft_return_arch(res, env, vars)) : (EXIT_SUCCESS);
+	return (res) ? (ft_return_arch(res, vars.env, vars)) : (EXIT_SUCCESS);
 }
 
 int			ft_nm_fat32(void *ptr, t_vars vars)
