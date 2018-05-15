@@ -12,18 +12,19 @@
 
 #include "ft_otool.h"
 
-int						check_corrupt_size(uint32_t section, uint32_t size)
+int							check_corrupt_size(uint32_t section, uint32_t size)
 {
 	if (section > size)
 		return (EXIT_FAILURE);
 	return (EXIT_SUCCESS);
 }
 
-int						ft_display_32(struct section *sec, char *header, t_vars vars)
+int							ft_display_32(struct section *sec, char *header,
+	t_vars vars)
 {
-	uint32_t			i;
-	uint32_t			y;
-	uintmax_t			x;
+	uint32_t				i;
+	uint32_t				y;
+	uintmax_t				x;
 
 	i = 0;
 	x = 1;
@@ -40,7 +41,7 @@ int						ft_display_32(struct section *sec, char *header, t_vars vars)
 			x++;
 		}
 		ft_putchar('\n');
-		if (check_corrupt_size((uint32_t)sec->addr + 16, (uint32_t)vars.end_file))
+		if (check_corrupt_size(sec->addr + 16, (uint32_t)vars.end_file))
 			return (ft_errors("Corrupted file"));
 		sec->addr = sec->addr + 16;
 		i += 16;
@@ -48,26 +49,13 @@ int						ft_display_32(struct section *sec, char *header, t_vars vars)
 	return (EXIT_SUCCESS);
 }
 
-struct segment_command	*ft_reverse_32(struct segment_command *segment)
+static int					ft_get_section_32(struct segment_command *segment,
+	int reverse, t_vars vars, char *header)
 {
-	segment->cmd = reverse_endian(segment->cmd);
-	segment->cmdsize = reverse_endian(segment->cmdsize);
-	return (segment);
-}
+	struct section			*sec;
 
-struct section			*ft_reverse_sec(struct section *sec)
-{
-	sec->addr = reverse_endian(sec->addr);
-	sec->offset = reverse_endian(sec->offset);
-	sec->size = reverse_endian(sec->size);
-	return (sec);
-}
-
-static int			ft_get_section_32(struct segment_command *segment, int reverse, t_vars vars, char *header)
-{
-	struct section		*sec;
-
-	segment->nsects = reverse ? reverse_endian(segment->nsects) : segment->nsects;
+	segment->nsects = reverse ? reverse_endian(segment->nsects)
+		: segment->nsects;
 	if (segment->nsects < 1)
 		return (EXIT_SUCCESS);
 	if (check_corrupt((struct section *)(segment + 1), vars.end_file))
@@ -76,31 +64,30 @@ static int			ft_get_section_32(struct segment_command *segment, int reverse, t_v
 	if (!vars.env)
 		ft_printf("%s:\n", vars.arg);
 	ft_putstr("Contents of (__TEXT,__text) section\n");
-	sec = reverse ? ft_reverse_sec(sec) : sec;
+	sec = reverse ? ft_reverse_sec_32(sec) : sec;
 	while (segment->nsects-- > 0)
 	{
 		if (ft_strcmp(sec->sectname, SECT_TEXT) == 0)
-		{
-			if (check_corrupt_size((uint32_t)sec->addr, (uint32_t)vars.end_file))
-				return (ft_errors("Corrupted file"));
-			return (ft_display_32(sec, header, vars));
-		}
+			return (check_corrupt_size(sec->addr, (uint32_t)vars.end_file) ||
+			check_corrupt_size(sec->addr + sec->size, (uint32_t)vars.end_file))
+			? (ft_errors("Corrupted file"))
+			: (ft_display_32(sec, header, vars));
 		if (check_corrupt(sec + 1, vars.end_file))
-				return (ft_errors("Corrupted file"));
+			return (ft_errors("Corrupted file"));
 		sec++;
 	}
 	return (EXIT_SUCCESS);
 }
 
-int					ft_check_segment_32(struct segment_command *seg,
-struct mach_header *header, int reverse, t_vars vars)
+int							ft_check_segment_32(struct segment_command *seg,
+	struct mach_header *header, int reverse, t_vars vars)
 {
-	struct section		*section;
-	size_t				count;
+	struct section			*section;
+	size_t					count;
 
 	count = 0;
 	if (check_corrupt((void *)seg + sizeof(section), vars.end_file))
-			return (ft_errors("Corrupted file"));
+		return (ft_errors("Corrupted file"));
 	section = (struct section *)(seg + 1);
 	while (count++ < seg->nsects)
 	{
@@ -117,7 +104,7 @@ struct mach_header *header, int reverse, t_vars vars)
 	return (EXIT_SUCCESS);
 }
 
-int					ft_handle_32(void *ptr, t_vars vars, int reverse)
+int							ft_handle_32(void *ptr, t_vars vars, int reverse)
 {
 	int						ncmds;
 	struct mach_header		*header;
@@ -135,10 +122,8 @@ int					ft_handle_32(void *ptr, t_vars vars, int reverse)
 			return (ft_get_section_32(seg, reverse, vars, (char *)header))
 			? (EXIT_FAILURE) : (EXIT_SUCCESS);
 		if (seg->cmd == LC_SEGMENT)
-		{
 			if (ft_check_segment_32(seg, header, reverse, vars))
 				return (EXIT_FAILURE);
-		}
 		if (check_corrupt((void *)seg + seg->cmdsize, vars.end_file)
 			|| seg->cmdsize % 4 != 0)
 			return (ft_errors("Corrupted file"));

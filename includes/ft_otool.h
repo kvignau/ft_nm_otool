@@ -10,8 +10,8 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef FT_NM_H
-# define FT_NM_H
+#ifndef FT_OTOOL_H
+# define FT_OTOOL_H
 
 # include <stdlib.h>
 # include <sys/mman.h>
@@ -22,44 +22,35 @@
 # include <mach-o/fat.h>
 # include "../ft_printf/includes/ft_printf.h"
 
-// typedef struct		s_lst
-// {
-// 	char			type;
-// 	char			*name;
-// 	char			*value;
-// 	uintmax_t		cmp_val;
-// 	struct s_lst	*next;
-// }					t_lst;
-
-typedef struct		s_vars
+typedef struct				s_vars
 {
-	char			*arg;
-	int				little_endian;
-	void			*end_file;
-	int				env;
-}					t_vars;
+	char					*arg;
+	int						little_endian;
+	void					*end_file;
+	int						env;
+}							t_vars;
 
-int					ft_otool(void *ptr, t_vars vars);
-uint32_t			reverse_endian(uint32_t narch);
+int							ft_otool(void *ptr, t_vars vars);
+uint32_t					reverse_endian(uint32_t narch);
 
-int					ft_handle_64(void *ptr, t_vars vars, int reverse);
-int					ft_handle_32(void *ptr, t_vars vars, int reverse);
+int							ft_handle_64(void *ptr, t_vars vars, int reverse);
+int							ft_handle_32(void *ptr, t_vars vars, int reverse);
 
-int					ft_otool_fat32(void *ptr, t_vars vars);
-int					ft_otool_fat64(void *ptr, t_vars vars);
+struct segment_command_64	*ft_reverse(struct segment_command_64 *segment);
+struct section_64			*ft_reverse_sec_64(struct section_64 *sec);
 
-void				ft_add_precision(uintmax_t value, int is64bit);
+struct segment_command		*ft_reverse_32(struct segment_command *segment);
+struct section				*ft_reverse_sec_32(struct section *sec);
 
-void				print_byte_to_hex(char byte, int env, uintmax_t x);
-// char				ft_type(uint8_t type, uintmax_t value, uint8_t sect,
-// 	char **sections);
-// void				ft_create_block_64(t_lst **lst, struct nlist_64 nlist64,
-// 	char **sections, char *stringtable);
-// void				ft_create_block_32(t_lst **lst, struct nlist list,
-// 	char **sections, char *stringtable);
-int					check_corrupt(void *ptr, void *buf);
-int					check_corrupt_size(uint32_t section, uint32_t size);
-// void				print_out(t_lst *lst, int is64bit);
-int					ft_errors(char *str);
+int							ft_otool_fat32(void *ptr, t_vars vars);
+int							ft_otool_fat64(void *ptr, t_vars vars);
+
+void						ft_add_precision(uintmax_t value, int is64bit);
+void						print_byte_to_hex(char byte, int env, uintmax_t x);
+
+int							check_corrupt(void *ptr, void *buf);
+int							check_corrupt_size(uint32_t section, uint32_t size);
+
+int							ft_errors(char *str);
 
 #endif

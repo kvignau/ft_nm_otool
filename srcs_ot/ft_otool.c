@@ -12,20 +12,7 @@
 
 #include "ft_otool.h"
 
-uint32_t	reverse_endian(uint32_t narch)
-{
-	narch = ((narch << 8) & 0xFF00FF00) | ((narch >> 8) & 0xFF00FF);
-	return (narch << 16) | (narch >> 16);
-}
-
-int			check_corrupt(void *ptr, void *buf)
-{
-	if (ptr > buf)
-		return (EXIT_FAILURE);
-	return (EXIT_SUCCESS);
-}
-
-int			ft_otool(void *ptr, t_vars vars)
+int				ft_otool(void *ptr, t_vars vars)
 {
 	uint32_t				magic_number;
 
@@ -33,7 +20,6 @@ int			ft_otool(void *ptr, t_vars vars)
 	if (check_corrupt(ptr, vars.end_file))
 		return (ft_errors("Corrupted file"));
 	magic_number = *(uint32_t *)ptr;
-	// ft_printf("MAGIC %x\n", magic_number);
 	if (magic_number == MH_MAGIC_64)
 		return (ft_handle_64(ptr, vars, 0));
 	if (magic_number == MH_CIGAM_64)
@@ -49,7 +35,7 @@ int			ft_otool(void *ptr, t_vars vars)
 	return (EXIT_SUCCESS);
 }
 
-static int	create_buff(int fd, struct stat buf, t_vars vars)
+static int		create_buff(int fd, struct stat buf, t_vars vars)
 {
 	void					*ptr;
 	int						check;
@@ -71,9 +57,9 @@ static int	create_buff(int fd, struct stat buf, t_vars vars)
 	return (check);
 }
 
-t_vars		ft_init_vars(char *arg)
+static t_vars	ft_init_vars(char *arg)
 {
-	t_vars	tmp;
+	t_vars					tmp;
 
 	tmp.arg = arg;
 	tmp.little_endian = 0;
@@ -82,7 +68,21 @@ t_vars		ft_init_vars(char *arg)
 	return (tmp);
 }
 
-int			main(int ac, char **av)
+static int		ft_no_args(void)
+{
+	int						fd;
+	struct stat				buf;
+	t_vars					vars;
+
+	vars = ft_init_vars("a.out");
+	if ((fd = open("a.out", O_RDONLY)) < 0)
+		return (ft_errors("Open error"));
+	if (fstat(fd, &buf) < 0)
+		return (ft_errors("fstat error"));
+	return (create_buff(fd, buf, vars));
+}
+
+int				main(int ac, char **av)
 {
 	int						fd;
 	struct stat				buf;
@@ -93,7 +93,7 @@ int			main(int ac, char **av)
 	i = 1;
 	check = 0;
 	if (ac < 2)
-		return (ft_errors("nm need at least 1 arg"));
+		return (ft_no_args());
 	while (i < ac)
 	{
 		vars = ft_init_vars(av[i]);
@@ -107,11 +107,4 @@ int			main(int ac, char **av)
 	if (check)
 		return (EXIT_FAILURE);
 	return (EXIT_SUCCESS);
-}
-
-int			ft_errors(char *msg)
-{
-	ft_putstr_fd(msg, 2);
-	ft_putstr_fd("\n", 2);
-	return (EXIT_FAILURE);
 }

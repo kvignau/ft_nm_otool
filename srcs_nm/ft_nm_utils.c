@@ -12,9 +12,9 @@
 
 #include "ft_nm.h"
 
-void	free_lst(t_lst **lst)
+void		free_lst(t_lst **lst)
 {
-	t_lst					*tmp;
+	t_lst	*tmp;
 
 	tmp = NULL;
 	while (*lst)
@@ -28,10 +28,11 @@ void	free_lst(t_lst **lst)
 	}
 }
 
-char	ft_type(uint8_t type, uintmax_t value, uint8_t sect, char **sections)
+char		ft_type(uint8_t type, uintmax_t value, uint8_t sect,
+	char **sections)
 {
-	char					*section_name;
-	char					ret;
+	char	*section_name;
+	char	ret;
 
 	ret = 0;
 	ret = ((type & N_TYPE) == N_INDR) ? 'I' : ret;
@@ -55,13 +56,13 @@ char	ft_type(uint8_t type, uintmax_t value, uint8_t sect, char **sections)
 	return (!(type & N_EXT) ? ft_tolower(ret) : ret);
 }
 
-char	*ft_add_precision(uintmax_t value, int is64bit)
+char		*ft_add_precision(uintmax_t value, int is64bit)
 {
-	char					*str;
-	char					*res;
-	int						system_type;
-	int						i;
-	int						len;
+	char	*str;
+	char	*res;
+	int		system_type;
+	int		i;
+	int		len;
 
 	i = 0;
 	str = ft_itoa_base_uimax(value, 16);
@@ -80,9 +81,16 @@ char	*ft_add_precision(uintmax_t value, int is64bit)
 	return (res);
 }
 
-void	print_out(t_lst *lst, int is64bit)
+int			ft_check_addresses(void *ptr, void *buf)
 {
-	t_lst					*tmp;
+	if (ptr > buf)
+		return (EXIT_FAILURE);
+	return (EXIT_SUCCESS);
+}
+
+void		print_out(t_lst *lst, int is64bit)
+{
+	t_lst	*tmp;
 
 	tmp = lst;
 	while (tmp)

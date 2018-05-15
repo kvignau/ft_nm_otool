@@ -12,13 +12,6 @@
 
 #include "ft_nm.h"
 
-struct nlist_64		ft_reverse_list_64(struct nlist_64 list)
-{
-	list.n_un.n_strx = reverse_endian(list.n_un.n_strx);
-	list.n_value = reverse_endian(list.n_value);
-	return (list);
-}
-
 int					ft_check_blocks_64(struct nlist_64 list, char *stringtable,
 	t_vars vars, t_lst **lst)
 {

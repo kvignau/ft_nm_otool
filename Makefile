@@ -32,11 +32,14 @@ C_FILES_NM += ft_nm_32.c
 C_FILES_NM += ft_nm_list.c
 C_FILES_NM += ft_nm_utils.c
 C_FILES_NM += ft_nm_fat.c
+C_FILES_NM += ft_nm_reverse.c
 
 C_FILES_OT = ft_otool.c
 C_FILES_OT += ft_otool_64.c
 C_FILES_OT += ft_otool_32.c
 C_FILES_OT += ft_otool_fat.c
+C_FILES_OT += ft_otool_utils.c
+C_FILES_OT += ft_otool_reverse.c
 
 O_FILES_NM = $(addprefix $(O_DIR_NM),$(C_FILES_NM:.c=.o))
 O_FILES_OT = $(addprefix $(O_DIR_OT),$(C_FILES_OT:.c=.o))

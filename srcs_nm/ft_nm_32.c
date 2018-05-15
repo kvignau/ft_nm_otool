@@ -12,21 +12,6 @@
 
 #include "ft_nm.h"
 
-struct symtab_command	*ft_reverse_sym(struct symtab_command *sym)
-{
-	sym->symoff = reverse_endian(sym->symoff);
-	sym->stroff = reverse_endian(sym->stroff);
-	sym->nsyms = reverse_endian(sym->nsyms);
-	return (sym);
-}
-
-struct nlist			ft_reverse_list(struct nlist list)
-{
-	list.n_un.n_strx = reverse_endian(list.n_un.n_strx);
-	list.n_value = reverse_endian(list.n_value);
-	return (list);
-}
-
 int						ft_check_blocks(struct nlist list, char *stringtable,
 	t_vars vars, t_lst **lst)
 {
@@ -94,13 +79,6 @@ static char				**ft_get_section_32(char **sections,
 		tmp[i + j++] = (sec++)->sectname;
 	free(sections);
 	return (tmp);
-}
-
-struct load_command		*ft_reverse(struct load_command *lc)
-{
-	lc->cmd = reverse_endian(lc->cmd);
-	lc->cmdsize = reverse_endian(lc->cmdsize);
-	return (lc);
 }
 
 int						ft_handle_32(void *ptr, t_vars vars, int reverse)

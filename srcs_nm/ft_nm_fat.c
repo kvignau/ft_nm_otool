@@ -12,12 +12,6 @@
 
 #include "ft_nm.h"
 
-uint32_t	reverse_endian(uint32_t narch)
-{
-	narch = ((narch << 8) & 0xFF00FF00) | ((narch >> 8) & 0xFF00FF);
-	return (narch << 16) | (narch >> 16);
-}
-
 int			ft_return_arch(void *res, int env, t_vars vars)
 {
 	if (env == 3)

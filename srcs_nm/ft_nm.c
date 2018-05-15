@@ -12,13 +12,6 @@
 
 #include "ft_nm.h"
 
-int			ft_check_addresses(void *ptr, void *buf)
-{
-	if (ptr > buf)
-		return (EXIT_FAILURE);
-	return (EXIT_SUCCESS);
-}
-
 int			ft_nm(void *ptr, t_vars vars)
 {
 	uint32_t				magic_number;
@@ -100,13 +93,6 @@ int			main(int ac, char **av)
 		i++;
 	}
 	if (check)
-		return (EXIT_FAILURE);
-	return (EXIT_SUCCESS);
-}
-
-int			check_corrupt(size_t offset, size_t buf_size)
-{
-	if (offset > buf_size)
 		return (EXIT_FAILURE);
 	return (EXIT_SUCCESS);
 }
