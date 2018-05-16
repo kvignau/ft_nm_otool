@@ -57,15 +57,18 @@ static int	create_buff(int fd, struct stat buf, t_vars vars)
 	return (check);
 }
 
-t_vars		ft_init_vars(char *arg)
+static int	ft_no_args(void)
 {
-	t_vars	tmp;
+	int						fd;
+	struct stat				buf;
+	t_vars					vars;
 
-	tmp.arg = arg;
-	tmp.sections = NULL;
-	tmp.end_file = 0;
-	tmp.env = 0;
-	return (tmp);
+	vars = ft_init_vars("a.out");
+	if ((fd = open("a.out", O_RDONLY)) < 0)
+		return (ft_errors("Open error"));
+	if (fstat(fd, &buf) < 0)
+		return (ft_errors("fstat error"));
+	return (create_buff(fd, buf, vars));
 }
 
 int			main(int ac, char **av)
@@ -79,7 +82,7 @@ int			main(int ac, char **av)
 	i = 1;
 	check = 0;
 	if (ac < 2)
-		return (ft_errors("nm need at least 1 arg"));
+		return (ft_no_args());
 	while (i < ac)
 	{
 		vars = ft_init_vars(av[i]);

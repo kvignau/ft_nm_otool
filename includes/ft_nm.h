@@ -40,6 +40,7 @@ typedef struct			s_lst
 }						t_lst;
 
 int						ft_nm(void *ptr, t_vars vars);
+t_vars					ft_init_vars(char *arg);
 
 int						ft_handle_32(void *ptr, t_vars vars, int reverse);
 int						ft_handle_64(void *ptr, t_vars vars, int reverse);

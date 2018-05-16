@@ -16,6 +16,8 @@ H_DIR = includes/
 C_DIR = srcs/
 O_DIR = obj/
 
+CC = gcc
+
 FLAGS = -Wall -Wextra -Werror
 
 C_FILES = ft_atoi.c
