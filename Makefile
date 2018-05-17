@@ -47,7 +47,6 @@ O_FILES_OT = $(addprefix $(O_DIR_OT),$(C_FILES_OT:.c=.o))
 all: ftprintf $(NAME_NM) $(NAME_OT)
 
 ftprintf:
-	# @rm $(FT_PRINTF)libftprintf.a
 	make -C $(FT_PRINTF)
 
 $(NAME_NM): $(O_FILES_NM)

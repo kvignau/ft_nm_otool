@@ -88,9 +88,9 @@ int				ft_create_block_64(t_lst **lst, struct nlist_64 nlist64,
 	return (EXIT_SUCCESS);
 }
 
-t_vars		ft_init_vars(char *arg)
+t_vars			ft_init_vars(char *arg)
 {
-	t_vars	tmp;
+	t_vars					tmp;
 
 	tmp.arg = arg;
 	tmp.sections = NULL;

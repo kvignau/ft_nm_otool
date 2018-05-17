@@ -68,7 +68,7 @@ static int				ft_get_section_64(struct segment_command_64 *segment,
 			return (ft_errors("Corrupted file"));
 		sec++;
 	}
-	return (EXIT_SUCCESS);
+	return (EXIT_FAILURE);
 }
 
 int						ft_check_segment_64(struct segment_command_64 *seg,
@@ -93,7 +93,7 @@ struct mach_header_64 *header, int reverse, t_vars vars)
 			return (ft_errors("Corrupted file"));
 		section++;
 	}
-	return (EXIT_SUCCESS);
+	return (EXIT_FAILURE);
 }
 
 int						ft_handle_64(void *ptr, t_vars vars, int reverse)
@@ -111,15 +111,14 @@ int						ft_handle_64(void *ptr, t_vars vars, int reverse)
 	{
 		seg = reverse ? ft_reverse(seg) : seg;
 		if (ft_strcmp(seg->segname, SEG_TEXT) == 0)
-			return (ft_get_section_64(seg, reverse, vars, (char *)header))
-			? (EXIT_FAILURE) : (EXIT_SUCCESS);
+			return (ft_get_section_64(seg, reverse, vars, (char *)header));
 		if (seg->cmd == LC_SEGMENT_64)
-			if (ft_check_segment_64(seg, header, reverse, vars))
-				return (EXIT_FAILURE);
+			if (!ft_check_segment_64(seg, header, reverse, vars))
+				return (EXIT_SUCCESS);
 		if (check_corrupt((void *)seg + seg->cmdsize, vars.end_file)
 			|| seg->cmdsize % 8 != 0)
 			return (ft_errors("Corrupted file"));
 		seg = (void *)seg + seg->cmdsize;
 	}
-	return (EXIT_SUCCESS);
+	return (EXIT_FAILURE);
 }

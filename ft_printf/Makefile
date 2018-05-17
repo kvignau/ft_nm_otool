@@ -45,7 +45,7 @@ all: $(NAME)
 $(NAME): $(O_FILES_PRINTF)
 	make -C $(LIBFT)
 	ar rc $@ $^
-	libtool -static -o $@ $@ Libft/libft.a
+	@libtool -static -o $@ $@ Libft/libft.a 2> /dev/null
 	ranlib $@
 
 $(O_FILES_PRINTF): $(O_DIR_PRINTF)%.o: $(C_DIR_PRINTF)%.c
